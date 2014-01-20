@@ -1,0 +1,1 @@
+grep -nE "^\s([[:alpha:][:digit:]\.]+:)\s([[:alpha:][:digit:]\.\[\]\>\<\s]:?)*\s?" spider.log  | grep -vE "\(|\//|\-|/|=" 

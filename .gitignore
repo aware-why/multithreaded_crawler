@@ -1,0 +1,50 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Backup files in linux
+*~
+
+# Exe files
+.exe
+
+# Self-test files
+spider0.exe
+spider0.txt
+spider0.log
+spider.log.exe
+spider.log
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+.settings
