@@ -19,3 +19,8 @@ and has the crawling depth limited to be 2 by default (It's tested in python2.7)
 In threaded_spider directory, there are extra log files whose name like spider.*.log respectively 
 generated using `python run.py --thread=*` command.  
 
+
+Community
+======================
+QQ Group: 4704309  
+Your contribute will be welcome.  
