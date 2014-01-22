@@ -3,10 +3,10 @@ key words.
 """
 import BeautifulSoup  
 
-from threaded_spider import logger
 from threaded_spider.http import Request
 from threaded_spider.core.spider import BaseSpider
 from threaded_spider.basic.util import unicode_to_str, make_utf8
+from threaded_spider.keyword_item import Item
 
 class KeyWordSpider(BaseSpider):
     """Search key words in a html document"""
@@ -47,18 +47,23 @@ class KeyWordSpider(BaseSpider):
         html_url = response.url
         html_content = unicode_to_str(response.body)
         depth = response.request.depth
-        if -1 == html_content.find('<html'):
+        
+        if -1 == html_content.find('</'):
             self.log('%s html has invalid header: %r', response, html_content[:200],
                      log_level='WARN')
             return
         
         if self.crawler.settings.get('MAX_DEPTH', 0) == 0:
             pass
-        elif response.request.depth >= self.crawler.settings.get('MAX_DEPTH', 0):
+        elif depth >= self.crawler.settings.get('MAX_DEPTH', 0):
             pass
         else: 
             for link in self.extract_links(html_url, html_content):
                 print 'Schedule link: %r' % link
                 yield Request(url=link, depth=depth + 1)
-            
-        print 'Got url: %r, depth: %r' % (response.url, depth)
+        
+        item = Item()
+        item['html_content'] = html_content
+        item['depth'] = depth 
+        item['self_url'] = html_url   
+        yield item

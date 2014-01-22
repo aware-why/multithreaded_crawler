@@ -9,6 +9,7 @@ from threaded_spider.basic.threadpool import ThreadPool
 from threaded_spider.http import Request, Response
 from threaded_spider.core.downloader import Downloader
 from threaded_spider.core.scheduler import Scheduler
+from threaded_spider.core.extracter import Extracter
 
 class Engine(object):
     
@@ -18,6 +19,7 @@ class Engine(object):
         self.downloader = Downloader(crawler)
         self.scheduler = Scheduler()
         self.requests_to_be_scheduled = []
+        self.extracter = Extracter(crawler)
         self.thread_pool = ThreadPool(minthreads=self.settings.getint('THREAD_NUM', 7),
                                       maxthreads=self.settings.getint('THREAD_NUM', 7),
                                       name='engine_threadpool')
@@ -41,6 +43,8 @@ class Engine(object):
         # Stop the threadpool and close spider.
         self.thread_pool.stop()
         self.thread_pool.dumpStats()
+        self.detach_spider()
+        
         self.running = False
         logger.info('@engine, stopped.')
         logger.info('@engine, unscheduled: %s' % len(self.requests_to_be_scheduled))
@@ -58,6 +62,10 @@ class Engine(object):
         self._start_requests = iter(start_requests)
         
         self.scheduler.attach_spider(spider)
+        self.extracter.attach_spider(spider)
+    
+    def detach_spider(self):
+        self.extracter.detach_spider()
         
     def process_next_request(self, spider):
         self._process_next_request(spider)    
@@ -123,10 +131,12 @@ class Engine(object):
         # Judge whether there is any request to be processed.
         has_unscheduled_request = len(self.requests_to_be_scheduled)
         has_pending_request = self.scheduler.has_pending_requests()
-        has_pending_task = self.thread_pool.has_pending_task()
         has_pending_download = self.downloader.has_pending_download()
+        has_pending_response = self.extracter.has_pending_response()
+        has_pending_task = self.thread_pool.has_pending_task() 
         return not any((has_unscheduled_request, has_pending_request, 
-                        has_pending_download, has_pending_task))
+                        has_pending_download, has_pending_response, 
+                        has_pending_task))
     
     def _spider_idle(self, spider):
         self.crawler.stop()
@@ -155,20 +165,13 @@ class Engine(object):
         elif isinstance(response, type(None)):
             return
         
-        self.call_spider(response, request, spider)
-    
-    def call_spider(self, response, request, spider):
-        parse_response = request.callback or spider.parse
-        parsed_resp = parse_response(response)
-        for item in parsed_resp:
-            if self.crawler.stopped:
-                # Immediatelly exit once crawler receive stop signal
-                logger.warn('Force to exit from spider`s parser when crawler stop. '
+        if self.crawler.stopped:
+                # Immediatelly exit once the crawler receive the stop signal
+                logger.warn('Force to exit from extracter when crawler stop. '
                             'Response: %s' % response, spider=spider)
                 return
             
-            if isinstance(item, Request):
-                self.schedule_later(item, spider)
-            else:
-                logger.info('@engine, Spider Parsed: [item: %r]' % item, spider=spider)
+        self.extracter.enter_extracter(response, request, spider)
+    
+    
         # TODO: Store the items after parsing.

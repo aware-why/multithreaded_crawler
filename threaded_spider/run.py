@@ -10,7 +10,8 @@ import re
 import time
 
 # Temporarily declare the search path for the package.
-pkg_path = os.path.dirname(os.path.abspath(__file__)) + os.sep + '..'
+CUR_DIR = os.path.dirname(os.path.abspath(__file__))
+pkg_path = os.path.join(CUR_DIR, '..')
 sys.path.insert(0, pkg_path)
 
 from threaded_spider import logger
@@ -45,14 +46,23 @@ def main():
     opts, args = parser.parse_args()
     print opts, args
     
-    logger.start('spider.log', log_level=opts.log_level,
+    log_file = os.path.join(CUR_DIR, 'spider.log')
+    logger.start(log_file, log_level=opts.log_level,
                  redirect_stdout_to_logfile=True,
                  enable_console_output=True)
     start = time.time()
     print '@main, start.哈哈  when %s'  % start
     
+    
+    if not os.path.isabs(opts.db_fp):
+        opts.db_fp = os.path.join(CUR_DIR, opts.db_fp)
+    from threaded_spider.keyword_itemproc import DB_SCHEMA
+    
     _s = Settings(values={'MAX_DEPTH': opts.max_depth, 'LOG_LEVEL': opts.log_level,
-                          'THREAD_NUM': opts.thread_num})
+                          'THREAD_NUM': opts.thread_num,
+                          'ITEM_PROCESSOR': 'threaded_spider.keyword_itemproc.DBStore',
+                          'DB_FP': opts.db_fp, 'DB_SCHEMA': DB_SCHEMA,}
+                  )
     spider = KeyWordSpider('spider.sina', start_urls=[opts.start_url])
     crawler = Crawler(_s) 
     print '@main, crawler settings: %s' % crawler.settings   

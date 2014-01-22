@@ -121,3 +121,33 @@ def unicode_to_str(text, encoding=None, errors='strict'):
         return text
     else:
         raise TypeError('unicode_to_str must receive a unicode or str object, got %s' % type(text).__name__)
+
+def load_object(path):
+    """
+    Load an object given its absolute object path, and return it.
+    
+    Object can be a class, function, variable or instance.
+    path ie: 'threaded_spider.core.engine.Engine'
+    """
+    
+    try:
+        dot = path.rindex('.')
+    except ValueError, e:
+        raise ValueError('Not a full object path: %s', path)
+    
+    mod_name, obj_name = path[:dot], path[dot+1:]
+    try:
+        mod = __import__(mod_name)
+        names = mod_name.split('.')
+        for xname in names:
+            mod = getattr(mod, xname)
+    except ImportError, e:
+        raise ImportError('Error loading object <%s>: %s' % (path, e))
+    
+    try:
+        obj = getattr(mod, obj_name)
+    except AttributeError, e:
+        raise NameError('Module <%s> doesnt define any object named <%s>' 
+                        % (mod.__name__, obj_name))
+    
+    return obj
